@@ -37,6 +37,7 @@ async function run() {
     });
 
     const blogsCollection = client.db("Blogs").collection("allBlogs");
+    const CommentsCollection = client.db("Blogs").collection("comments");
 
     // const bookingCollection = client.db("Blogs").collection("bookings");
 
@@ -70,7 +71,6 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
       const updatedBlog = req.body;
-      console.log("updated blog", updatedBlog);
       const blog = {
         $set: {
           title: updatedBlog.title,
@@ -83,6 +83,23 @@ async function run() {
       const result = await blogsCollection.updateOne(query, blog, options);
       res.send(result);
     });
+
+
+    //  comments related api
+
+    app.post('/comments',async(req,res)=>{
+      const comment = req.body;
+      const result = await CommentsCollection.insertOne(comment);
+      res.send(result)
+    })
+
+    app.get('/comments', async(req,res)=>{
+      const cursor = CommentsCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+
+
 
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
