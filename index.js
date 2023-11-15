@@ -38,8 +38,7 @@ async function run() {
 
     const blogsCollection = client.db("Blogs").collection("allBlogs");
     const CommentsCollection = client.db("Blogs").collection("comments");
-
-    // const bookingCollection = client.db("Blogs").collection("bookings");
+    const wishlistCollection = client.db("Blogs").collection("wishlist");
 
     //  blogs related api
     app.post("/all", async (req, res) => {
@@ -56,6 +55,7 @@ async function run() {
 
     app.get("/blogsCount", async (req, res) => {
       const count = await blogsCollection.estimatedDocumentCount();
+
       res.send({ count });
     });
 
@@ -84,25 +84,50 @@ async function run() {
       res.send(result);
     });
 
-
     //  comments related api
 
-    app.post('/comments',async(req,res)=>{
+    app.post("/comments", async (req, res) => {
       const comment = req.body;
       const result = await CommentsCollection.insertOne(comment);
-      res.send(result)
-    })
+      res.send(result);
+    });
 
-    app.get('/comments', async(req,res)=>{
+    app.get("/comments", async (req, res) => {
       const cursor = CommentsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
-    })
+    });
 
+    //  wishlist related api
+
+    app.post("/wishlist", async (req, res) => {
+      const wishlist = req.body;
+      const result = await wishlistCollection.insertOne(wishlist);
+      res.send(result);
+    });
+
+    app.get("/wishlist", async (req, res) => {
+      console.log(req.query.email);
+      let query = {};
+      if (req.query?.email) {
+        query = { email: req.query.email };
+      }
+      const cursor = wishlistCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+
+      app.delete('/wishlist/:id',async(req,res)=>{
+        const id = req.params.id;
+        const query = {_id : new ObjectId(id)};
+        const result = await wishlistCollection.deleteOne(query);
+        res.send(result);
+      })
 
 
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
