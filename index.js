@@ -98,6 +98,27 @@ async function run() {
       res.send(result);
     });
 
+    app.patch('/comments/:id',async(req,res)=>{
+      const id = req.params.id;
+
+      const query = {_id: new ObjectId(id)};
+      const updatedComment = req.body;
+      const comment ={
+        $set:{
+          comment: updatedComment.comment
+        }
+      }
+      const result = await CommentsCollection.updateOne(query,comment);
+      res.send(result)
+    })
+
+    app.delete('/comments/:id',async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id:new ObjectId(id)};
+      const result = await CommentsCollection.deleteOne(query);
+      res.send(result)
+    })
+
     //  wishlist related api
 
     app.post("/wishlist", async (req, res) => {
@@ -107,7 +128,7 @@ async function run() {
     });
 
     app.get("/wishlist", async (req, res) => {
-      console.log(req.query.email);
+      // console.log(req.query.email);
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
@@ -117,14 +138,17 @@ async function run() {
       res.send(result);
     });
 
+    app.delete("/wishlist/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await wishlistCollection.deleteOne(query);
+      res.send(result);
+    });
 
-      app.delete('/wishlist/:id',async(req,res)=>{
-        const id = req.params.id;
-        const query = {_id : new ObjectId(id)};
-        const result = await wishlistCollection.deleteOne(query);
-        res.send(result);
-      })
-
+    // app.get("/all", async (req, res) => {
+    //   const userEmail = req.query.email;
+    //   console.log(userEmail)
+    // });
 
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
