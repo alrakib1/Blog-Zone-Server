@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
-// const jwt = require("jsonwebtoken");
-// const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -9,8 +9,13 @@ const port = process.env.PORT || 5000;
 require("dotenv").config();
 
 // middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5174','http://localhost:5173'],
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
+
 
 // routes
 app.get("/", (req, res) => {
@@ -30,6 +35,29 @@ const client = new MongoClient(uri, {
   },
 });
 
+
+// verify token
+const verifyToken = async(req,res,next)=>{
+  const token = req.cookies?.token;
+  // console.log('token inside verify token',token);
+
+if(!token){
+  res.status(401).send({message:'unauthorized'})
+}
+jwt.verify(token,process.env.ACCESS_TOKEN,(error,decoded)=>{
+  // error
+  if(error){
+    console.log(error)
+    return res.status(401).send({message:'unauthorized'})
+  }
+
+  console.log(decoded)
+  // decoded
+  req.user = decoded;
+  next();
+})
+}
+
 async function run() {
   try {
     app.get("/", (req, res) => {
@@ -40,7 +68,25 @@ async function run() {
     const CommentsCollection = client.db("Blogs").collection("comments");
     const wishlistCollection = client.db("Blogs").collection("wishlist");
 
+    //  auth related api
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
+        expiresIn: "1h",
+      });
+
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
+    });
+
     //  blogs related api
+
     app.post("/all", async (req, res) => {
       const blog = req.body;
       const result = await blogsCollection.insertOne(blog);
@@ -53,20 +99,21 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/blogsCount", async (req, res) => {
-      const count = await blogsCollection.estimatedDocumentCount();
+    // app.get("/blogsCount", async (req, res) => {
+    //   const count = await blogsCollection.estimatedDocumentCount();
 
-      res.send({ count });
-    });
+    //   res.send({ count });
+    // });
 
-    app.get("/all/:id", async (req, res) => {
+    app.get("/all/:id",verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
+
       const result = await blogsCollection.findOne(query);
       res.send(result);
     });
 
-    app.put("/all/:id", async (req, res) => {
+    app.patch("/all/:id",verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -98,26 +145,26 @@ async function run() {
       res.send(result);
     });
 
-    app.patch('/comments/:id',async(req,res)=>{
+    app.patch("/comments/:id", async (req, res) => {
       const id = req.params.id;
 
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const updatedComment = req.body;
-      const comment ={
-        $set:{
-          comment: updatedComment.comment
-        }
-      }
-      const result = await CommentsCollection.updateOne(query,comment);
-      res.send(result)
-    })
+      const comment = {
+        $set: {
+          comment: updatedComment.comment,
+        },
+      };
+      const result = await CommentsCollection.updateOne(query, comment);
+      res.send(result);
+    });
 
-    app.delete('/comments/:id',async(req,res)=>{
+    app.delete("/comments/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id:new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await CommentsCollection.deleteOne(query);
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     //  wishlist related api
 
@@ -127,8 +174,12 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/wishlist", async (req, res) => {
-      // console.log(req.query.email);
+    app.get("/wishlist",verifyToken, async (req, res) => {
+
+      if(req.query.email !==req.user.email){
+        return res.status(403).send({message:'forbidden'})
+      }
+
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
@@ -138,7 +189,10 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/wishlist/:id", async (req, res) => {
+    app.delete("/wishlist/:id",verifyToken, async (req, res) => {
+      if(req.query.email !==req.user.email){
+        return res.status(403).send({message:'forbidden'})
+      }
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await wishlistCollection.deleteOne(query);
