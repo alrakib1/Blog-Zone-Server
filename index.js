@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
@@ -6,16 +7,16 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // environment variables
-require("dotenv").config();
 
 // middleware
-app.use(cors({
-  origin: ['http://localhost:5174','http://localhost:5173'],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:5174", "http://localhost:5173"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
-
 
 // routes
 app.get("/", (req, res) => {
@@ -23,8 +24,7 @@ app.get("/", (req, res) => {
 });
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const uri =
-  "mongodb+srv://abdullahalrakib30:DlmlfbZ7Rh9nrNJ0@cluster0.fesbo2h.mongodb.net/?retryWrites=true&w=majority";
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fesbo2h.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -35,28 +35,27 @@ const client = new MongoClient(uri, {
   },
 });
 
-
 // verify token
-const verifyToken = async(req,res,next)=>{
-  const token = req.cookies?.token;
+const verifyToken = async (req, res, next) => {
+  const token = req?.cookies?.token;
   // console.log('token inside verify token',token);
 
-if(!token){
-  res.status(401).send({message:'unauthorized'})
-}
-jwt.verify(token,process.env.ACCESS_TOKEN,(error,decoded)=>{
-  // error
-  if(error){
-    console.log(error)
-    return res.status(401).send({message:'unauthorized'})
+  if (!token) {
+    res.status(401).send({ message: "unauthorized" });
   }
+  jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded) => {
+    // error
+    if (error) {
+      console.log(error);
+      return res.status(401).send({ message: "unauthorized" });
+    }
 
-  console.log(decoded)
-  // decoded
-  req.user = decoded;
-  next();
-})
-}
+    console.log(decoded);
+    // decoded
+    req.user = decoded;
+    next();
+  });
+};
 
 async function run() {
   try {
@@ -77,12 +76,18 @@ async function run() {
       });
 
       res
-        .cookie("token", token, {
+        .cookie('token', token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
         })
         .send({ success: true });
+    });
+
+    app.post("/logout", async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      res.clearCookie('token', {  maxAge: 0}).send({ message: true })
     });
 
     //  blogs related api
@@ -99,13 +104,7 @@ async function run() {
       res.send(result);
     });
 
-    // app.get("/blogsCount", async (req, res) => {
-    //   const count = await blogsCollection.estimatedDocumentCount();
-
-    //   res.send({ count });
-    // });
-
-    app.get("/all/:id",verifyToken, async (req, res) => {
+    app.get("/all/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
 
@@ -113,7 +112,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/all/:id",verifyToken, async (req, res) => {
+    app.patch("/all/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -174,10 +173,9 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/wishlist",verifyToken, async (req, res) => {
-
-      if(req.query.email !==req.user.email){
-        return res.status(403).send({message:'forbidden'})
+    app.get("/wishlist", verifyToken, async (req, res) => {
+      if (req.query.email !== req.user.email) {
+        return res.status(403).send({ message: "forbidden" });
       }
 
       let query = {};
@@ -189,20 +187,14 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/wishlist/:id",verifyToken, async (req, res) => {
-      if(req.query.email !==req.user.email){
-        return res.status(403).send({message:'forbidden'})
-      }
+    app.delete("/wishlist/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await wishlistCollection.deleteOne(query);
       res.send(result);
     });
 
-    // app.get("/all", async (req, res) => {
-    //   const userEmail = req.query.email;
-    //   console.log(userEmail)
-    // });
+   
 
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
