@@ -36,26 +36,26 @@ const client = new MongoClient(uri, {
 });
 
 // verify token
-const verifyToken = async (req, res, next) => {
-  const token = req?.cookies?.token;
-  // console.log('token inside verify token',token);
+// const verifyToken = async (req, res, next) => {
+//   const token = req?.cookies?.token;
+//   // console.log('token inside verify token',token);
 
-  if (!token) {
-    res.status(401).send({ message: "unauthorized" });
-  }
-  jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded) => {
-    // error
-    if (error) {
-      console.log(error);
-      return res.status(401).send({ message: "unauthorized" });
-    }
+//   if (!token) {
+//     res.status(401).send({ message: "unauthorized" });
+//   }
+//   jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded) => {
+//     // error
+//     if (error) {
+//       console.log(error);
+//       return res.status(401).send({ message: "unauthorized" });
+//     }
 
-    console.log(decoded);
-    // decoded
-    req.user = decoded;
-    next();
-  });
-};
+//     console.log(decoded);
+//     // decoded
+//     req.user = decoded;
+//     next();
+//   });
+// };
 
 async function run() {
   try {
@@ -92,7 +92,7 @@ async function run() {
 
     //  blogs related api
 
-    app.post("/all", async (req, res) => {
+    app.post("/all",async (req, res) => {
       const blog = req.body;
       const result = await blogsCollection.insertOne(blog);
       res.send(result);
@@ -104,7 +104,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/all/:id",verifyToken,  async (req, res) => {
+    app.get("/all/:id",  async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
 
@@ -112,7 +112,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/all/:id",verifyToken,  async (req, res) => {
+    app.patch("/all/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -132,19 +132,19 @@ async function run() {
 
     //  comments related api
 
-    app.post("/comments",verifyToken, async (req, res) => {
+    app.post("/comments", async (req, res) => {
       const comment = req.body;
       const result = await CommentsCollection.insertOne(comment);
       res.send(result);
     });
 
-    app.get("/comments",verifyToken, async (req, res) => {
+    app.get("/comments", async (req, res) => {
       const cursor = CommentsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
 
-    app.patch("/comments/:id",verifyToken, async (req, res) => {
+    app.patch("/comments/:id", async (req, res) => {
       const id = req.params.id;
 
       const query = { _id: new ObjectId(id) };
@@ -158,7 +158,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/comments/:id",verifyToken, async (req, res) => {
+    app.delete("/comments/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await CommentsCollection.deleteOne(query);
@@ -167,13 +167,13 @@ async function run() {
 
     //  wishlist related api
 
-    app.post("/wishlist",verifyToken, async (req, res) => {
+    app.post("/wishlist", async (req, res) => {
       const wishlist = req.body;
       const result = await wishlistCollection.insertOne(wishlist);
       res.send(result);
     });
 
-    app.get("/wishlist",verifyToken,  async (req, res) => {
+    app.get("/wishlist", async (req, res) => {
       if (req.query.email !== req.user.email) {
         return res.status(403).send({ message: "forbidden" });
       }
@@ -187,7 +187,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/wishlist/:id",verifyToken, async (req, res) => {
+    app.delete("/wishlist/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await wishlistCollection.deleteOne(query);
