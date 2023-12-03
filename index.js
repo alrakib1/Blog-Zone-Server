@@ -11,7 +11,7 @@ const port = process.env.PORT || 5000;
 // middleware
 app.use(
   cors({
-    origin: ["http://localhost:5174", "http://localhost:5173"],
+    origin: ["http://localhost:5174", "http://localhost:5173", "https://blog-zone-web.netlify.app/"],
     credentials: true,
   })
 );
@@ -104,7 +104,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/all/:id", verifyToken, async (req, res) => {
+    app.get("/all/:id",verifyToken,  async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
 
@@ -112,7 +112,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/all/:id", verifyToken, async (req, res) => {
+    app.patch("/all/:id",verifyToken,  async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -132,19 +132,19 @@ async function run() {
 
     //  comments related api
 
-    app.post("/comments", async (req, res) => {
+    app.post("/comments",verifyToken, async (req, res) => {
       const comment = req.body;
       const result = await CommentsCollection.insertOne(comment);
       res.send(result);
     });
 
-    app.get("/comments", async (req, res) => {
+    app.get("/comments",verifyToken, async (req, res) => {
       const cursor = CommentsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
 
-    app.patch("/comments/:id", async (req, res) => {
+    app.patch("/comments/:id",verifyToken, async (req, res) => {
       const id = req.params.id;
 
       const query = { _id: new ObjectId(id) };
@@ -158,7 +158,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/comments/:id", async (req, res) => {
+    app.delete("/comments/:id",verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await CommentsCollection.deleteOne(query);
@@ -167,13 +167,13 @@ async function run() {
 
     //  wishlist related api
 
-    app.post("/wishlist", async (req, res) => {
+    app.post("/wishlist",verifyToken, async (req, res) => {
       const wishlist = req.body;
       const result = await wishlistCollection.insertOne(wishlist);
       res.send(result);
     });
 
-    app.get("/wishlist", verifyToken, async (req, res) => {
+    app.get("/wishlist",verifyToken,  async (req, res) => {
       if (req.query.email !== req.user.email) {
         return res.status(403).send({ message: "forbidden" });
       }
@@ -187,7 +187,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/wishlist/:id", verifyToken, async (req, res) => {
+    app.delete("/wishlist/:id",verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await wishlistCollection.deleteOne(query);
@@ -200,9 +200,9 @@ async function run() {
     // await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
