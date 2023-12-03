@@ -11,10 +11,13 @@ const port = process.env.PORT || 5000;
 // middleware
 app.use(
   cors({
-    origin: ["http://localhost:5174", "http://localhost:5173", "https://blog-zone-web.netlify.app/"],
+    origin: ["https://blog-zone-web.netlify.app", 'http://localhost:5173/'],
     credentials: true,
   })
 );
+
+
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -36,26 +39,27 @@ const client = new MongoClient(uri, {
 });
 
 // verify token
-// const verifyToken = async (req, res, next) => {
-//   const token = req?.cookies?.token;
-//   // console.log('token inside verify token',token);
 
-//   if (!token) {
-//     res.status(401).send({ message: "unauthorized" });
-//   }
-//   jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded) => {
-//     // error
-//     if (error) {
-//       console.log(error);
-//       return res.status(401).send({ message: "unauthorized" });
-//     }
+const verifyToken = async (req, res, next) => {
+  const token = req?.cookies?.token;
+  // console.log('token inside verify token',token);
 
-//     console.log(decoded);
-//     // decoded
-//     req.user = decoded;
-//     next();
-//   });
-// };
+  if (!token) {
+    res.status(401).send({ message: "unauthorized" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded) => {
+    // error
+    if (error) {
+      console.log(error);
+      return res.status(401).send({ message: "unauthorized" });
+    }
+
+    console.log(decoded);
+    // decoded
+    req.user = decoded;
+    next();
+  });
+};
 
 async function run() {
   try {
@@ -174,9 +178,9 @@ async function run() {
     });
 
     app.get("/wishlist", async (req, res) => {
-      if (req.query.email !== req.user.email) {
-        return res.status(403).send({ message: "forbidden" });
-      }
+      // if (req.query.email !== req.user.email) {
+      //   return res.status(403).send({ message: "forbidden" });
+      // }
 
       let query = {};
       if (req.query?.email) {
