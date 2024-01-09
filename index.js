@@ -11,12 +11,10 @@ const port = process.env.PORT || 5000;
 // middleware
 app.use(
   cors({
-    origin: ["https://blog-zone-web.netlify.app", 'http://localhost:5173/','http://localhost:5174'],
+   origin: ["https://blog-zone-web.netlify.app", 'http://localhost:5173','http://localhost:5174'],
     credentials: true,
   })
 );
-
-
 
 app.use(express.json());
 app.use(cookieParser());
@@ -80,7 +78,7 @@ async function run() {
       });
 
       res
-        .cookie('token', token, {
+        .cookie("token", token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
@@ -91,12 +89,12 @@ async function run() {
     app.post("/logout", async (req, res) => {
       const user = req.body;
       console.log(user);
-      res.clearCookie('token', {  maxAge: 0}).send({ message: true })
+      res.clearCookie("token", { maxAge: 0 }).send({ message: true });
     });
 
     //  blogs related api
 
-    app.post("/all",async (req, res) => {
+    app.post("/all", async (req, res) => {
       const blog = req.body;
       const result = await blogsCollection.insertOne(blog);
       res.send(result);
@@ -108,7 +106,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/all/:id",  async (req, res) => {
+    app.get("/all/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
 
@@ -198,8 +196,6 @@ async function run() {
       res.send(result);
     });
 
-   
-
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
@@ -215,5 +211,5 @@ async function run() {
 run().catch(console.dir);
 
 app.listen(port, () => {
-  console.log("server running on", port);
+  console.log(`server running on: http://localhost:${port}`);
 });
